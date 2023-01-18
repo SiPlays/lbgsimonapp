@@ -1,0 +1,10 @@
+variables:
+  dockerRegistryServiceConnection: ''
+  imageRepository: 'lbgsimonapp'
+  containerRegistry: 'crlbgsimonpptestuks.azurecr.io'
+  tag: '$(Build.BuildId)'
+  azsub: ''
+  azacr: ''
+  project: ''
+  pipeline: ''
+  k8sc: ''

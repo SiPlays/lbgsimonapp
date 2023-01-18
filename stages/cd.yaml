@@ -1,0 +1,24 @@
+parameters:
+  project: ''
+  pipeline: ''
+  k8sc: ''
+
+steps:
+
+- task: DownloadBuildArtifacts@1
+  inputs:
+    buildType: 'specific'
+    project: "${{ parameters.project }}"
+    pipeline: "${{ parameters.pipeline }}"
+    buildVersionToDownload: 'latest'
+    downloadType: 'single'
+    downloadPath: '$(System.ArtifactsDirectory)'
+
+   
+- task: KubernetesManifest@0
+  inputs:
+    action: 'deploy'
+    kubernetesServiceConnection: "${{ parameters.k8sc }}"
+    manifests: '$(System.ArtifactsDirectory)/lbgartifact/*.yaml'
+    containers: crlbgsimonpptestuks.azurecr.io/votefront:$(Build.BuildId)
+    imagePullSecrets: 'impage-pull-secret'

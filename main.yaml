@@ -1,0 +1,44 @@
+name: CI_CD
+
+trigger:
+  - main
+
+stages:
+ 
+- stage: CI
+  displayName: 'CI'
+
+  jobs:
+  - job: CI
+    displayName: 'CI'
+    pool:
+      vmImage: ubuntu-latest
+    
+    variables:
+    - template: variables/vars.yaml
+    
+    steps:
+    - template: stages/ci.yaml
+      parameters:
+        azsub: ${{ variables.azsub  }}
+        azacr: ${{ variables.azacr  }}
+
+- stage: CD
+  displayName: 'CD'
+  condition: and(in(dependencies.CI.result, 'Succeeded', 'SucceededWithIssues'), not(startsWith(variables['Build.SourceBranch'], 'refs/pull')), not(startsWith(variables['Build.SourceBranch'], 'refs/heads/feature')))
+
+  jobs:
+  - job: CD
+    displayName: 'CD'
+    pool:
+      vmImage: ubuntu-latest
+    
+    variables:
+    - template: variables/vars.yaml
+    
+    steps:
+    - template: stages/cd.yaml
+      parameters:
+        project: ${{ variables.project  }}
+        k8sc: ${{ variables.k8sc  }}
+        pipeline: ${{ variables.pipeline  }}

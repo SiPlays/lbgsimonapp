@@ -1,0 +1,61 @@
+parameters:
+  azsub: ''
+  azacr: ''
+
+steps:
+
+- task: DockerCompose@0
+  inputs:
+    containerregistrytype: 'Azure Container Registry'
+    azureSubscription: "${{ parameters.azsub }}"
+    azureContainerRegistry: "${{ parameters.azacr }}"
+    dockerComposeFile: '**/docker-compose.yaml'
+    action: 'build services'
+    additionalImageTags: $(Build.BuildId)
+
+- task: DockerCompose@0
+  inputs:
+    containerregistrytype: 'Azure Container Registry'
+    azureSubscription: "${{ parameters.azsub }}"
+    azureContainerRegistry: "${{ parameters.azacr }}"
+    dockerComposeFile: '**/docker-compose.yaml'
+    action: 'push services'
+    additionalImageTags: $(Build.BuildId)
+    
+      
+- task: PowerShell@2
+  displayName: 'psvar build'
+  inputs:
+    targetType: inline
+    script: |
+      $buildId = $env:BUILD_BUILDID
+      $dateTime = (Get-Date).ToString("yyyyMMdd_HHmmss")
+      $variable = "voteapp_$buildId"+"_$dateTime"
+      Write-Host "##vso[task.setvariable variable=psvar]$variable"
+      $copypath = "$(Build.ArtifactStagingDirectory)" + "\"+ $variable + ".yaml"
+      Write-Host "##vso[task.setvariable variable=copypath]$copypath"
+
+
+- task: PowerShell@2
+  displayName: 'Rename Files'
+  inputs:
+    targetType: inline
+    script: |
+      Move-Item -Path "azure-voting-app-redis-master\azure-vote-all-in-one-redis.yaml" -Destination "$(copypath)"
+      test-path "$(copypath)"
+      
+
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: '$(Build.ArtifactStagingDirectory)'
+    contents: '**/*.yaml'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: lbgartifact
+
+
+
+
